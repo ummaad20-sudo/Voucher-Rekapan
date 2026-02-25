@@ -5,20 +5,23 @@ from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.popup import Popup
-from kivy.graphics import Rectangle, Color, Line, Ellipse
+from kivy.graphics import Rectangle, Color
 from kivy.core.window import Window
-from kivy.core.clipboard import Clipboard
 from kivy.clock import Clock
-from openpyxl import load_workbook
+from kivy.utils import platform
 from collections import defaultdict
 from datetime import datetime
+from openpyxl import load_workbook
 import os
 
-
+# ==============================
+# LABEL BISA DI KLIK UNTUK COPY
+# ==============================
 class ClickableLabel(Label):
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
             if self.text.strip() != "":
+                from kivy.core.clipboard import Clipboard
                 Clipboard.copy(self.text)
                 App.get_running_app().show_notif("Hasil berhasil dicopy!")
             return True
@@ -28,6 +31,7 @@ class ClickableLabel(Label):
 class RekapApp(App):
 
     def build(self):
+        self.hasil_text = ""
 
         self.layout = BoxLayout(
             orientation='vertical',
@@ -35,67 +39,28 @@ class RekapApp(App):
             spacing=15
         )
 
+        # ===== BACKGROUND =====
         with self.layout.canvas.before:
-
-            # ===== Background Gelap =====
-            Color(0.05, 0.05, 0.07, 1)
+            Color(0.08, 0.08, 0.1, 1)
             self.bg = Rectangle(size=Window.size, pos=self.layout.pos)
-
-            # ===== Garis Orange Atas =====
-            Color(1, 0.25, 0, 1)
-            self.top_bar = Rectangle(
-                size=(Window.width, 25),
-                pos=(0, Window.height - 25)
-            )
-
-            # ===== Bulatan Modern =====
-            Color(1, 0.4, 0, 0.08)
-            Ellipse(pos=(50, Window.height - 300), size=(250, 250))
-            Ellipse(pos=(Window.width - 300, 80), size=(220, 220))
-
-            # ===== Lingkaran Outline =====
-            Color(1, 0.5, 0.3, 0.4)
-            Line(circle=(Window.width * 0.8, Window.height * 0.7, 120), width=1.2)
-            Line(circle=(Window.width * 0.2, Window.height * 0.3, 80), width=1)
-
-            # ===== Segitiga Modern =====
-            Color(1, 0.4, 0.2, 0.5)
-            Line(points=[
-                100, 150,
-                200, 300,
-                20, 300,
-                100, 150
-            ], width=1)
-
-            Line(points=[
-                Window.width - 150, Window.height - 200,
-                Window.width - 50, Window.height - 100,
-                Window.width - 250, Window.height - 100,
-                Window.width - 150, Window.height - 200
-            ], width=1)
-
-            # ===== Kotak Modern =====
-            Color(1, 0.3, 0.1, 0.3)
-            Line(rectangle=(60, 60, 120, 120), width=1)
-            Line(rectangle=(Window.width - 200, Window.height - 350, 150, 150), width=1)
 
         self.layout.bind(size=self.update_bg)
 
         # ===== HEADER =====
-        self.label = Label(
+        self.header = Label(
             text="[b]REKAP DATA VOUCHER RUIJIE PRO[/b]",
             markup=True,
             font_size=20,
             size_hint=(1, 0.1),
             color=(1, 1, 1, 1)
         )
-        self.layout.add_widget(self.label)
+        self.layout.add_widget(self.header)
 
         # ===== HASIL =====
         self.result_label = ClickableLabel(
-            text="Silakan pilih file Excel...",
-            size_hint_y=None,
+            text="SILAHKAN PILIH FILE EXCEL...",
             markup=True,
+            size_hint_y=None,
             color=(1, 1, 1, 1)
         )
         self.result_label.bind(texture_size=self.result_label.setter('size'))
@@ -104,28 +69,23 @@ class RekapApp(App):
         scroll.add_widget(self.result_label)
         self.layout.add_widget(scroll)
 
-        # ===== Spacer =====
-        self.layout.add_widget(Label(size_hint=(1, 0.03)))
-        self.layout.add_widget(Label(size_hint=(1, 0.03)))
-        self.layout.add_widget(Label(size_hint=(1, 0.03)))
-
-        # ===== SHARE BUTTON =====
+        # ===== TOMBOL SHARE =====
         self.btn_share = Button(
-            text="Share Hasil Rekap",
+            text="SHARE HASIL REKAPAN",
             size_hint=(1, 0.1),
-            background_color=(0.2, 0.6, 0.5, 1)
+            background_color=(0.1, 0.5, 0.8, 1)
         )
         self.btn_share.bind(on_press=self.share_hasil)
         self.layout.add_widget(self.btn_share)
 
-        # ===== PILIH FILE =====
-        btn = Button(
-            text="Pilih File Excel",
+        # ===== TOMBOL PILIH FILE =====
+        self.btn_file = Button(
+            text="PILIH FILE EXCEL",
             size_hint=(1, 0.1),
-            background_color=(0.2, 0.4, 0.9, 1)
+            background_color=(0.2, 0.7, 0.4, 1)
         )
-        btn.bind(on_press=self.buka_file)
-        self.layout.add_widget(btn)
+        self.btn_file.bind(on_press=self.buka_file)
+        self.layout.add_widget(self.btn_file)
 
         # ===== NOTIF =====
         self.notif = Label(
@@ -136,22 +96,21 @@ class RekapApp(App):
         self.layout.add_widget(self.notif)
 
         # ===== CREATOR =====
-        self.creator_label = Label(
+        self.creator = Label(
             text="creator by JUN.AI © 2026",
-            size_hint=(1, 0.06),
-            font_size=18,
-            bold=True,
-            color=(0.9, 0.9, 0.9, 1)
+            size_hint=(1, 0.05),
+            font_size=16,
+            color=(0.8, 0.8, 0.8, 1)
         )
-        self.layout.add_widget(self.creator_label)
+        self.layout.add_widget(self.creator)
 
         return self.layout
 
+    # ==============================
     def update_bg(self, *args):
         self.bg.size = Window.size
-        self.top_bar.size = (Window.width, 25)
-        self.top_bar.pos = (0, Window.height - 25)
 
+    # ==============================
     def show_notif(self, text):
         self.notif.text = text
         Clock.schedule_once(self.clear_notif, 2)
@@ -159,20 +118,27 @@ class RekapApp(App):
     def clear_notif(self, dt):
         self.notif.text = ""
 
+    # ==============================
     def buka_file(self, instance):
-        content = FileChooserListView()
+        content = FileChooserListView(
+            path="/storage/emulated/0/",
+            filters=["*.xlsx"]
+        )
+
         popup = Popup(
             title="Pilih File Excel",
             content=content,
-            size_hint=(0.9, 0.9)
+            size_hint=(0.95, 0.95)
         )
 
         content.bind(
-            on_submit=lambda x, selection, touch:
+            on_submit=lambda chooser, selection, touch:
             self.proses_file(selection, popup)
         )
+
         popup.open()
 
+    # ==============================
     def proses_file(self, selection, popup):
         if not selection:
             return
@@ -181,16 +147,16 @@ class RekapApp(App):
         popup.dismiss()
 
         try:
-            wb = load_workbook(file_path)
+            wb = load_workbook(file_path, data_only=True)
             sheet = wb.active
-        except:
+        except Exception as e:
             self.result_label.text = "[color=ff4444]Gagal membuka file![/color]"
             return
 
         rekap_detail = defaultdict(lambda: {"jumlah": 0, "total": 0})
         rekap_tanggal = defaultdict(int)
 
-        header = [cell.value for cell in sheet[1]]
+        header = [str(cell.value).strip() for cell in sheet[1]]
 
         try:
             kolom_grup = header.index("Grup pengguna")
@@ -201,25 +167,28 @@ class RekapApp(App):
             return
 
         for row in sheet.iter_rows(min_row=2, values_only=True):
-            grup = row[kolom_grup]
-            harga = row[kolom_harga]
-            tanggal_full = row[kolom_tanggal]
+            try:
+                grup = row[kolom_grup]
+                harga = row[kolom_harga]
+                tanggal_full = row[kolom_tanggal]
 
-            if grup and harga and tanggal_full:
+                if not (grup and harga and tanggal_full):
+                    continue
+
                 if isinstance(tanggal_full, datetime):
                     tanggal = tanggal_full.strftime("%Y/%m/%d")
                 else:
                     tanggal = str(tanggal_full).split(" ")[0]
 
-                try:
-                    harga_int = int(harga)
-                except:
-                    continue
+                harga_int = int(float(harga))
 
                 key = (tanggal, grup)
                 rekap_detail[key]["jumlah"] += 1
                 rekap_detail[key]["total"] += harga_int
                 rekap_tanggal[tanggal] += harga_int
+
+            except:
+                continue
 
         hasil = "[b]===== HASIL REKAP =====[/b]\n\n"
         tanggal_terakhir = None
@@ -244,16 +213,29 @@ class RekapApp(App):
         self.hasil_text = hasil
         self.result_label.text = hasil
 
+    # ==============================
     def share_hasil(self, instance):
-        if not hasattr(self, "hasil_text"):
+        if not self.hasil_text:
             self.show_notif("Belum ada hasil!")
             return
 
-        file_path = os.path.join(os.getcwd(), "hasil_rekap.txt")
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.write(self.hasil_text)
+        file_path = os.path.join(
+            "/storage/emulated/0/",
+            "hasil_rekap.txt"
+        )
 
-        self.show_notif("File hasil_rekap.txt berhasil dibuat!")
+        try:
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(self.hasil_text)
+
+            if platform == "android":
+                from plyer import share
+                share.share(file_path)
+
+            self.show_notif("File berhasil dibuat & dishare!")
+
+        except:
+            self.show_notif("Gagal membuat file!")
 
 
 if __name__ == "__main__":
