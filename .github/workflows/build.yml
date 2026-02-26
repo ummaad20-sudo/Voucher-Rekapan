@@ -7,12 +7,18 @@ jobs:
   build:
     runs-on: ubuntu-22.04
 
+    env:
+      BUILDOZER_WARN_ON_ROOT: 0
+
     steps:
-      - name: Checkout repo
+      # =============================
+      # Checkout
+      # =============================
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       # =============================
-      # Install dependencies (FIX libtinfo dll)
+      # System dependencies (SUPER IMPORTANT)
       # =============================
       - name: Install system dependencies
         run: |
@@ -31,15 +37,35 @@ jobs:
             libncurses5 \
             libncurses5-dev \
             libtinfo5 \
-            cmake
+            libffi-dev \
+            libssl-dev \
+            cmake \
+            ccache
 
       # =============================
-      # Install Buildozer
+      # Upgrade pip
+      # =============================
+      - name: Upgrade pip
+        run: |
+          python3 -m pip install --upgrade pip setuptools wheel
+
+      # =============================
+      # Install Buildozer + Cython
       # =============================
       - name: Install Buildozer
         run: |
-          python3 -m pip install --upgrade pip
-          pip install buildozer cython
+          pip install buildozer==1.5.0 cython==0.29.36
+
+      # =============================
+      # Cache buildozer (biar cepat & stabil)
+      # =============================
+      - name: Cache buildozer global dir
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.buildozer
+            ~/.gradle
+          key: buildozer-${{ runner.os }}
 
       # =============================
       # Build APK
