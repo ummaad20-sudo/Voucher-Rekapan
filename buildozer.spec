@@ -1,31 +1,27 @@
 [app]
 
-title = Rekap Penjualan Voucher
-package.name = rekapvoucher
-package.domain = org.junai
+title = Rekap Voucher Ruijie
+package.name = rekapruijie
+package.domain = com.ruijie
 
 source.dir = .
 source.include_exts = py,png,jpg,kv
 
 version = 1.0
 
-requirements = python3,kivy,openpyxl,pandas
+requirements = python3,kivy,openpyxl,et_xmlfile,plyer
 
 orientation = portrait
 fullscreen = 0
 
-android.permissions = READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE
+android.permissions = READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE,MANAGE_EXTERNAL_STORAGE
 
-android.api = 31
-android.minapi = 21
+android.api = 33
+android.minapi = 24
+android.sdk = 33
 android.ndk = 25b
 
-android.archs = arm64-v8a, armeabi-v7a
-
-# WAJIB untuk Android 11+
-android.request_legacy_external_storage = True
+android.enable_androidx = True
 
 [buildozer]
-
 log_level = 2
-warn_on_root = 0
