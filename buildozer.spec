@@ -13,6 +13,7 @@ requirements = python3,kivy==2.2.1,openpyxl,plyer
 orientation = portrait
 fullscreen = 0
 
+# Android
 android.api = 33
 android.minapi = 23
 android.sdk = 33
