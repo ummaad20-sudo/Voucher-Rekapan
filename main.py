@@ -40,7 +40,7 @@ class RekapApp(App):
         header = Label(
             text="[b]REKAP DATA VOUCHER RUIJIE PRO[/b]",
             markup=True,
-            font_size=20,
+            font_size=30,
             size_hint=(1, 0.1),
             color=(1, 1, 1, 1)
         )
@@ -48,7 +48,7 @@ class RekapApp(App):
 
         # HASIL
         self.result_label = ClickableLabel(
-            text="Silakan pilih file Excel...",
+            text="Upload file excel",
             size_hint_y=None,
             markup=True,
             color=(1, 1, 1, 1)
@@ -90,7 +90,7 @@ class RekapApp(App):
         # CREATOR
         creator = Label(
             text="creator by JUN.AI © 2026",
-            size_hint=(1, 0.05),
+            size_hint=(1, 0.03),
             color=(0.8, 0.8, 0.8, 1)
         )
         self.layout.add_widget(creator)
