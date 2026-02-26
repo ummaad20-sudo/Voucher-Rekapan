@@ -12,11 +12,16 @@ from kivy.utils import platform
 from openpyxl import load_workbook
 from collections import defaultdict
 from datetime import datetime
+from kivy.utils import platform
 import os
 
 # ================= ANDROID STORAGE FIX =================
 if platform == "android":
     from android.permissions import request_permissions, Permission
+    request_permissions([
+        Permission.READ_EXTERNAL_STORAGE,
+        Permission.WRITE_EXTERNAL_STORAGE
+    ])
     from android.storage import primary_external_storage_path
 
 
@@ -124,28 +129,29 @@ class RekapApp(App):
     # ================= FILE CHOOSER FIX =================
     def buka_file(self, instance):
 
-        if platform == "android":
-            start_path = primary_external_storage_path()
-        else:
-            start_path = "/"
+    if platform == "android":
+        from android.storage import primary_external_storage_path
+        storage_path = primary_external_storage_path()
+    else:
+        storage_path = "/"
 
-        content = FileChooserListView(
-            path=start_path,
-            filters=["*.xlsx", "*.xls"]
-        )
+    content = FileChooserListView(
+        path=storage_path,
+        filters=["*.xlsx", "*.xls"]
+    )
 
-        popup = Popup(
-            title="Pilih File Excel",
-            content=content,
-            size_hint=(0.9, 0.9)
-        )
+    popup = Popup(
+        title="Pilih File Excel",
+        content=content,
+        size_hint=(0.95, 0.95)
+    )
 
-        content.bind(
-            on_submit=lambda x, selection, touch:
-            self.proses_file(selection, popup)
-        )
+    content.bind(
+        on_submit=lambda chooser, selection, touch:
+        self.proses_file(selection, popup)
+    )
 
-        popup.open()
+    popup.open()
 
     def proses_file(self, selection, popup):
         if not selection:
