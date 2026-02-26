@@ -90,7 +90,7 @@ class RekapApp(App):
         # CREATOR
         creator = Label(
             text="creator by JUN.AI © 2026",
-            size_hint=(1, 0.03),
+            size_hint=(1, 0.06),
             color=(0.8, 0.8, 0.8, 1)
         )
         self.layout.add_widget(creator)
