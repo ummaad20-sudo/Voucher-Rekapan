@@ -16,11 +16,9 @@ from datetime import datetime
 from openpyxl import load_workbook
 import os
 import random
-import threading
-import requests
 
 # ===============================
-# PERMISSION ANDROID
+# PERMISSION ANDROID (AMAN)
 # ===============================
 if platform == "android":
     try:
@@ -28,7 +26,7 @@ if platform == "android":
         request_permissions([
             Permission.READ_EXTERNAL_STORAGE,
             Permission.WRITE_EXTERNAL_STORAGE,
-            Permission.INTERNET
+            Permission.INTERNET,
         ])
     except Exception:
         pass
@@ -49,7 +47,7 @@ class ClickableLabel(Label):
 
 
 # ===============================
-# GLASS CARD (TIDAK UBAH STYLE)
+# GLASS CARD (STYLE TETAP)
 # ===============================
 class GlassCard(FloatLayout):
     def __init__(self, **kwargs):
@@ -88,7 +86,7 @@ class RekapApp(App):
         except Exception:
             return str(angka)
 
-    # ---------- BACKGROUND ASLI ----------
+    # ---------- BACKGROUND ----------
     def create_gradient(self, width, height):
         texture = Texture.create(size=(1, height), colorfmt='rgba')
         buf = []
@@ -118,7 +116,7 @@ class RekapApp(App):
             size_hint=(1, 1)
         )
 
-        # ===== BACKGROUND TETAP =====
+        # ===== BACKGROUND =====
         with self.layout.canvas.before:
             self.gradient_texture = self.create_gradient(
                 Window.width,
@@ -158,7 +156,7 @@ class RekapApp(App):
             spacing=15
         )
 
-        # HEADER (FONT TIDAK DIUBAH)
+        # HEADER
         self.header = Label(
             text="[b]REKAPAN VOUCHER PENJUALAN[/b]",
             markup=True,
@@ -232,7 +230,7 @@ class RekapApp(App):
         self.notif.text = text
         Clock.schedule_once(lambda dt: self.clear_notif(), 2)
 
-    def clear_notif(self):
+    def clear_notif(self, *args):
         self.notif.text = ""
 
     # ===============================
@@ -337,23 +335,28 @@ class RekapApp(App):
             self.show_notif("Belum ada hasil!")
             return
 
-        file_path = "/storage/emulated/0/hasil_rekap.txt"
-
         try:
+            file_path = "/storage/emulated/0/hasil_rekap.txt"
+
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(self.hasil_text)
 
             if platform == "android":
-                from plyer import share
-                share.share(
-                    title="Hasil Rekap",
-                    text="File hasil rekap",
-                    filepath=file_path
-                )
+                try:
+                    from plyer import share
+                    share.share(
+                        title="Hasil Rekap",
+                        text="File hasil rekap",
+                        filepath=file_path
+                    )
+                except Exception as e:
+                    self.show_notif(f"Gagal share: {e}")
+                    return
 
             self.show_notif("File berhasil dibuat & dishare!")
-        except Exception:
-            self.show_notif("Gagal membuat file!")
+
+        except Exception as e:
+            self.show_notif(f"Gagal membuat file: {e}")
 
 
 if __name__ == "__main__":
