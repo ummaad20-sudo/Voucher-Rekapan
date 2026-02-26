@@ -14,6 +14,7 @@ from collections import defaultdict
 from datetime import datetime
 from kivy.utils import platform
 import os
+import shutil
 
 # ================= ANDROID STORAGE FIX =================
 if platform == "android":
@@ -152,6 +153,15 @@ class RekapApp(App):
     )
 
     popup.open()
+
+    # Copy file ke folder aplikasi dulu
+app_path = App.get_running_app().user_data_dir
+new_path = os.path.join(app_path, "temp.xlsx")
+
+shutil.copy(file_path, new_path)
+
+wb = load_workbook(new_path)
+sheet = wb.active
 
     def proses_file(self, selection, popup):
         if not selection:
