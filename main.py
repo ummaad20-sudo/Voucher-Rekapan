@@ -5,14 +5,19 @@ from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.popup import Popup
-from kivy.graphics import Rectangle, Color
 from kivy.core.window import Window
 from kivy.core.clipboard import Clipboard
 from kivy.clock import Clock
+from kivy.utils import platform
 from openpyxl import load_workbook
 from collections import defaultdict
 from datetime import datetime
 import os
+
+# ================= ANDROID STORAGE FIX =================
+if platform == "android":
+    from android.permissions import request_permissions, Permission
+    from android.storage import primary_external_storage_path
 
 
 class ClickableLabel(Label):
@@ -28,6 +33,14 @@ class ClickableLabel(Label):
 class RekapApp(App):
 
     def build(self):
+
+        # ===== REQUEST PERMISSION ANDROID =====
+        if platform == "android":
+            request_permissions([
+                Permission.READ_EXTERNAL_STORAGE,
+                Permission.WRITE_EXTERNAL_STORAGE
+            ])
+
         Window.clearcolor = (0.05, 0.05, 0.07, 1)
 
         self.layout = BoxLayout(
@@ -55,9 +68,13 @@ class RekapApp(App):
         )
         self.result_label.bind(texture_size=self.result_label.setter('size'))
 
-        scroll = ScrollView(size_hint=(1, 0.6))
+        scroll = ScrollView(size_hint=(1, 0.55))
         scroll.add_widget(self.result_label)
         self.layout.add_widget(scroll)
+
+        # Spacer supaya tombol turun
+        spacer = Label(size_hint=(1, 0.05))
+        self.layout.add_widget(spacer)
 
         # SHARE BUTTON
         self.btn_share = Button(
@@ -104,8 +121,19 @@ class RekapApp(App):
     def clear_notif(self, dt):
         self.notif.text = ""
 
+    # ================= FILE CHOOSER FIX =================
     def buka_file(self, instance):
-        content = FileChooserListView(filters=["*.xlsx", "*.xls"])
+
+        if platform == "android":
+            start_path = primary_external_storage_path()
+        else:
+            start_path = "/"
+
+        content = FileChooserListView(
+            path=start_path,
+            filters=["*.xlsx", "*.xls"]
+        )
+
         popup = Popup(
             title="Pilih File Excel",
             content=content,
@@ -116,6 +144,7 @@ class RekapApp(App):
             on_submit=lambda x, selection, touch:
             self.proses_file(selection, popup)
         )
+
         popup.open()
 
     def proses_file(self, selection, popup):
@@ -157,7 +186,7 @@ class RekapApp(App):
                     tanggal = str(tanggal_full).split(" ")[0]
 
                 try:
-                    harga_int = int(harga)
+                    harga_int = int(float(harga))
                 except:
                     continue
 
@@ -194,11 +223,16 @@ class RekapApp(App):
             self.show_notif("Belum ada hasil!")
             return
 
-        path = os.path.join(App.get_running_app().user_data_dir, "hasil_rekap.txt")
+        if platform == "android":
+            base_path = primary_external_storage_path()
+            path = os.path.join(base_path, "hasil_rekap.txt")
+        else:
+            path = "hasil_rekap.txt"
+
         with open(path, "w", encoding="utf-8") as f:
             f.write(self.hasil_text)
 
-        self.show_notif("File berhasil dibuat di penyimpanan aplikasi!")
+        self.show_notif("File berhasil dibuat di penyimpanan utama!")
 
 
 if __name__ == "__main__":
