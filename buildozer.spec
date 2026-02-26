@@ -19,7 +19,6 @@ android.request_legacy_external_storage = True
 
 android.api = 33
 android.minapi = 24
-android.sdk = 33
 android.ndk = 25b
 android.enable_androidx = True
 
