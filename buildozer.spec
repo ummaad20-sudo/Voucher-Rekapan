@@ -1,6 +1,6 @@
 [app]
 
-title = RekapVoucherPro
+title = Rekap Penjualan Voucher
 package.name = rekapvoucher
 package.domain = org.junai
 
