@@ -16,6 +16,19 @@ from openpyxl import load_workbook
 import os
 import random
 
+# ===============================
+# PERMISSION ANDROID (WAJIB APK)
+# ===============================
+if platform == "android":
+    try:
+        from android.permissions import request_permissions, Permission
+        request_permissions([
+            Permission.READ_EXTERNAL_STORAGE,
+            Permission.WRITE_EXTERNAL_STORAGE
+        ])
+    except Exception:
+        pass
+
 
 class ClickableLabel(Label):
     def on_touch_down(self, touch):
@@ -31,7 +44,16 @@ class ClickableLabel(Label):
 class RekapApp(App):
 
     # ===============================
-    # BUAT TEXTURE GRADIENT ORANGE + BLUE
+    # FORMAT RUPIAH
+    # ===============================
+    def rupiah(self, angka):
+        try:
+            return f"{int(angka):,}".replace(",", ".")
+        except:
+            return str(angka)
+
+    # ===============================
+    # GRADIENT BACKGROUND (TETAP)
     # ===============================
     def create_gradient(self, width, height):
         texture = Texture.create(size=(1, height), colorfmt='rgba')
@@ -39,20 +61,15 @@ class RekapApp(App):
 
         for y in range(height):
             t = y / float(height)
-
-            # Blend orange ke biru
             r = int((1 - t) * 255 + t * 0)
             g = int((1 - t) * 120 + t * 80)
             b = int((1 - t) * 0 + t * 255)
             a = 255
-
             buf.extend([r, g, b, a])
 
-        buf = bytes(buf)
-        texture.blit_buffer(buf, colorfmt='rgba', bufferfmt='ubyte')
+        texture.blit_buffer(bytes(buf), colorfmt='rgba', bufferfmt='ubyte')
         texture.wrap = 'repeat'
         texture.uvsize = (width, -1)
-
         return texture
 
     # ===============================
@@ -65,9 +82,8 @@ class RekapApp(App):
             spacing=15
         )
 
+        # ===== BACKGROUND (TIDAK DIHAPUS) =====
         with self.layout.canvas.before:
-
-            # GRADIENT HALUS ORANGE-BLUE
             self.gradient_texture = self.create_gradient(
                 Window.width,
                 Window.height
@@ -79,11 +95,9 @@ class RekapApp(App):
                 pos=(0, 0)
             )
 
-            # Overlay gelap tipis
             Color(0, 0, 0, 0.15)
             self.overlay = Rectangle(size=Window.size, pos=(0, 0))
 
-            # Lingkaran transparan
             for _ in range(18):
                 Color(1, 1, 1, 0.05)
                 Ellipse(
@@ -93,13 +107,11 @@ class RekapApp(App):
                           random.randint(80, 250))
                 )
 
-            # Segitiga outline
             for _ in range(12):
                 Color(1, 1, 1, 0.25)
                 x = random.randint(0, Window.width)
                 y = random.randint(0, Window.height)
                 size = random.randint(60, 160)
-
                 Line(points=[
                     x, y,
                     x + size, y,
@@ -107,7 +119,6 @@ class RekapApp(App):
                     x, y
                 ], width=1.2)
 
-            # Kotak outline
             for _ in range(12):
                 Color(1, 1, 1, 0.2)
                 Line(
@@ -122,7 +133,7 @@ class RekapApp(App):
 
         self.layout.bind(size=self.update_bg)
 
-        # HEADER
+        # ===== HEADER =====
         self.header = Label(
             text="[b]REKAPAN VOUCHER PENJUALAN[/b]",
             markup=True,
@@ -132,7 +143,7 @@ class RekapApp(App):
         )
         self.layout.add_widget(self.header)
 
-        # HASIL
+        # ===== HASIL =====
         self.result_label = ClickableLabel(
             text="MASUKAN FILE PENJUALAN",
             markup=True,
@@ -145,7 +156,7 @@ class RekapApp(App):
         scroll.add_widget(self.result_label)
         self.layout.add_widget(scroll)
 
-        # SHARE
+        # ===== SHARE =====
         self.btn_share = Button(
             text="SHARE HASIL REKAPAN",
             size_hint=(1, 0.1),
@@ -154,7 +165,7 @@ class RekapApp(App):
         self.btn_share.bind(on_press=self.share_hasil)
         self.layout.add_widget(self.btn_share)
 
-        # PILIH FILE
+        # ===== PILIH FILE =====
         self.btn_file = Button(
             text="PILIH FILE EXCEL",
             size_hint=(1, 0.1),
@@ -163,7 +174,7 @@ class RekapApp(App):
         self.btn_file.bind(on_press=self.buka_file)
         self.layout.add_widget(self.btn_file)
 
-        # NOTIF
+        # ===== NOTIF =====
         self.notif = Label(
             text="",
             size_hint=(1, 0.05),
@@ -171,11 +182,11 @@ class RekapApp(App):
         )
         self.layout.add_widget(self.notif)
 
-        # CREATOR
+        # ===== CREATOR =====
         self.creator = Label(
-            text="creator by JUN.AI © 2026",
+            text="creator by Jun © 2026",
             size_hint=(1, 0.05),
-            font_size=25,
+            font_size=22,
             color=(0.9, 0.9, 0.9, 1)
         )
         self.layout.add_widget(self.creator)
@@ -190,15 +201,19 @@ class RekapApp(App):
     # ===============================
     def show_notif(self, text):
         self.notif.text = text
-        Clock.schedule_once(self.clear_notif, 2)
+        Clock.schedule_once(lambda dt: self.clear_notif(), 2)
 
-    def clear_notif(self, dt):
+    def clear_notif(self):
         self.notif.text = ""
 
     # ===============================
+    # FILE CHOOSER STABIL
+    # ===============================
     def buka_file(self, instance):
+        start_path = "/storage/emulated/0/" if platform == "android" else os.getcwd()
+
         content = FileChooserListView(
-            path="/storage/emulated/0/",
+            path=start_path,
             filters=["*.xlsx"]
         )
 
@@ -226,7 +241,7 @@ class RekapApp(App):
         try:
             wb = load_workbook(file_path, data_only=True)
             sheet = wb.active
-        except:
+        except Exception:
             self.result_label.text = "[color=ff4444]Gagal membuka file![/color]"
             return
 
@@ -239,7 +254,7 @@ class RekapApp(App):
             kolom_grup = header.index("Grup pengguna")
             kolom_harga = header.index("Harga")
             kolom_tanggal = header.index("Diaktifkan di")
-        except:
+        except ValueError:
             self.result_label.text = "[color=ff4444]Header tidak sesuai![/color]"
             return
 
@@ -264,7 +279,7 @@ class RekapApp(App):
                 rekap_detail[key]["total"] += harga_int
                 rekap_tanggal[tanggal] += harga_int
 
-            except:
+            except Exception:
                 continue
 
         hasil = "[b]===== HASIL REKAP =====[/b]\n\n"
@@ -272,7 +287,7 @@ class RekapApp(App):
 
         for (tanggal, grup), data in sorted(rekap_detail.items()):
             if tanggal_terakhir and tanggal != tanggal_terakhir:
-                hasil += f"[color=FFA500]>>> TOTAL {tanggal_terakhir} : Rp {rekap_tanggal[tanggal_terakhir]}[/color]\n"
+                hasil += f"[color=FFA500]>>> TOTAL {tanggal_terakhir} : Rp {self.rupiah(rekap_tanggal[tanggal_terakhir])}[/color]\n"
                 hasil += "-----------------------------\n"
 
             if tanggal != tanggal_terakhir:
@@ -280,12 +295,12 @@ class RekapApp(App):
 
             hasil += f"  Grup   : {grup}\n"
             hasil += f"  Jumlah : {data['jumlah']}\n"
-            hasil += f"  Total  : Rp {data['total']}\n\n"
+            hasil += f"  Total  : Rp {self.rupiah(data['total'])}\n\n"
 
             tanggal_terakhir = tanggal
 
         if tanggal_terakhir:
-            hasil += f"[color=FFA500]>>> TOTAL {tanggal_terakhir} : Rp {rekap_tanggal[tanggal_terakhir]}[/color]\n"
+            hasil += f"[color=FFA500]>>> TOTAL {tanggal_terakhir} : Rp {self.rupiah(rekap_tanggal[tanggal_terakhir])}[/color]\n"
 
         self.hasil_text = hasil
         self.result_label.text = hasil
@@ -304,11 +319,15 @@ class RekapApp(App):
 
             if platform == "android":
                 from plyer import share
-                share.share(file_path)
+                share.share(
+                    title="Hasil Rekap",
+                    text="File hasil rekap",
+                    filepath=file_path
+                )
 
             self.show_notif("File berhasil dibuat & dishare!")
 
-        except:
+        except Exception:
             self.show_notif("Gagal membuat file!")
 
 
