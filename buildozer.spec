@@ -1,32 +1,30 @@
 [app]
-title = Rekap Ruijie Pro
-package.name = rekapruijie
-package.domain = com.ruijie
+
+title = Voucher Rekapan
+package.name = voucherrekapan
+package.domain = org.jun
 
 source.dir = .
 source.include_exts = py,png,jpg,kv
 
 version = 1.0
 
-requirements = python3,kivy==2.2.1,openpyxl,plyer
+requirements = python3,kivy,kivymd,pandas,openpyxl,requests
 
 orientation = portrait
+
 fullscreen = 0
 
-# Android
 android.api = 33
-android.minapi = 23
-android.sdk = 33
+android.minapi = 24
 android.ndk = 25b
+android.archs = arm64-v8a
 
-android.accept_sdk_license = True
-p4a.branch = stable
+android.permissions = READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE,INTERNET
 
-android.permissions = \
-    READ_EXTERNAL_STORAGE,\
-    WRITE_EXTERNAL_STORAGE,\
-    INTERNET
+android.allow_backup = True
 
 [buildozer]
+
 log_level = 2
-warn_on_root = 0
+warn_on_root = 1
