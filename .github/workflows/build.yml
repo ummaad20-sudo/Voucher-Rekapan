@@ -15,7 +15,6 @@ jobs:
 
       - name: Build APK
         run: |
-          yes | buildozer android clean
           yes | buildozer -v android debug --accept-license
 
       - name: Upload APK
