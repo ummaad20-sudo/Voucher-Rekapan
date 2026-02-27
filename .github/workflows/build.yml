@@ -11,11 +11,15 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.10
+
       - name: Install System Dependencies
         run: |
           sudo apt update
           sudo apt install -y \
-            python3-pip \
             build-essential \
             git zip unzip \
             openjdk-17-jdk \
@@ -26,12 +30,13 @@ jobs:
 
       - name: Install Buildozer
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip
           pip install buildozer cython
 
       - name: Build APK
         run: |
-          yes | buildozer -v android debug
+          buildozer android clean
+          buildozer -v android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
