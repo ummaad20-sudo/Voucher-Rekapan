@@ -12,18 +12,17 @@ from kivy.utils import platform
 from openpyxl import load_workbook
 from collections import defaultdict
 from datetime import datetime
-from kivy.utils import platform
 import os
 import shutil
 
-# ================= ANDROID STORAGE FIX =================
+# ================= ANDROID PERMISSION =================
 if platform == "android":
     from android.permissions import request_permissions, Permission
+    from android.storage import primary_external_storage_path
     request_permissions([
         Permission.READ_EXTERNAL_STORAGE,
         Permission.WRITE_EXTERNAL_STORAGE
     ])
-    from android.storage import primary_external_storage_path
 
 
 class ClickableLabel(Label):
@@ -39,33 +38,19 @@ class ClickableLabel(Label):
 class RekapApp(App):
 
     def build(self):
-
-        # ===== REQUEST PERMISSION ANDROID =====
-        if platform == "android":
-            request_permissions([
-                Permission.READ_EXTERNAL_STORAGE,
-                Permission.WRITE_EXTERNAL_STORAGE
-            ])
-
         Window.clearcolor = (0.05, 0.05, 0.07, 1)
 
-        self.layout = BoxLayout(
-            orientation='vertical',
-            padding=15,
-            spacing=15
-        )
+        self.layout = BoxLayout(orientation='vertical', padding=15, spacing=15)
 
-        # HEADER
         header = Label(
             text="[b]REKAP DATA VOUCHER RUIJIE PRO[/b]",
             markup=True,
-            font_size=30,
+            font_size=26,
             size_hint=(1, 0.1),
             color=(1, 1, 1, 1)
         )
         self.layout.add_widget(header)
 
-        # HASIL
         self.result_label = ClickableLabel(
             text="Upload file excel",
             size_hint_y=None,
@@ -78,11 +63,6 @@ class RekapApp(App):
         scroll.add_widget(self.result_label)
         self.layout.add_widget(scroll)
 
-        # Spacer supaya tombol turun
-        spacer = Label(size_hint=(1, 0.05))
-        self.layout.add_widget(spacer)
-
-        # SHARE BUTTON
         self.btn_share = Button(
             text="Share Hasil Rekap",
             size_hint=(1, 0.1),
@@ -92,7 +72,6 @@ class RekapApp(App):
         self.btn_share.bind(on_press=self.share_hasil)
         self.layout.add_widget(self.btn_share)
 
-        # PILIH FILE BUTTON
         btn_file = Button(
             text="Pilih File Excel",
             size_hint=(1, 0.1),
@@ -102,7 +81,6 @@ class RekapApp(App):
         btn_file.bind(on_press=self.buka_file)
         self.layout.add_widget(btn_file)
 
-        # NOTIF
         self.notif = Label(
             text="",
             size_hint=(1, 0.05),
@@ -110,16 +88,9 @@ class RekapApp(App):
         )
         self.layout.add_widget(self.notif)
 
-        # CREATOR
-        creator = Label(
-            text="creator by JUN.AI © 2026",
-            size_hint=(1, 0.06),
-            color=(0.8, 0.8, 0.8, 1)
-        )
-        self.layout.add_widget(creator)
-
         return self.layout
 
+    # ================= NOTIF =================
     def show_notif(self, text):
         self.notif.text = text
         Clock.schedule_once(self.clear_notif, 2)
@@ -127,42 +98,33 @@ class RekapApp(App):
     def clear_notif(self, dt):
         self.notif.text = ""
 
-    # ================= FILE CHOOSER FIX =================
+    # ================= FILE CHOOSER =================
     def buka_file(self, instance):
 
-    if platform == "android":
-        from android.storage import primary_external_storage_path
-        storage_path = primary_external_storage_path()
-    else:
-        storage_path = "/"
+        if platform == "android":
+            storage_path = primary_external_storage_path()
+        else:
+            storage_path = "/"
 
-    content = FileChooserListView(
-        path=storage_path,
-        filters=["*.xlsx", "*.xls"]
-    )
+        content = FileChooserListView(
+            path=storage_path,
+            filters=["*.xlsx", "*.xls"]
+        )
 
-    popup = Popup(
-        title="Pilih File Excel",
-        content=content,
-        size_hint=(0.95, 0.95)
-    )
+        popup = Popup(
+            title="Pilih File Excel",
+            content=content,
+            size_hint=(0.95, 0.95)
+        )
 
-    content.bind(
-        on_submit=lambda chooser, selection, touch:
-        self.proses_file(selection, popup)
-    )
+        content.bind(
+            on_submit=lambda chooser, selection, touch:
+            self.proses_file(selection, popup)
+        )
 
-    popup.open()
+        popup.open()
 
-    # Copy file ke folder aplikasi dulu
-app_path = App.get_running_app().user_data_dir
-new_path = os.path.join(app_path, "temp.xlsx")
-
-shutil.copy(file_path, new_path)
-
-wb = load_workbook(new_path)
-sheet = wb.active
-
+    # ================= PROSES FILE =================
     def proses_file(self, selection, popup):
         if not selection:
             return
@@ -171,8 +133,14 @@ sheet = wb.active
         popup.dismiss()
 
         try:
-            wb = load_workbook(file_path)
+            # Copy ke folder app dulu (anti crash android 11+)
+            app_path = self.user_data_dir
+            new_path = os.path.join(app_path, "temp.xlsx")
+            shutil.copy(file_path, new_path)
+
+            wb = load_workbook(new_path)
             sheet = wb.active
+
         except Exception:
             self.result_label.text = "[color=ff4444]Gagal membuka file![/color]"
             return
@@ -196,6 +164,7 @@ sheet = wb.active
             tanggal_full = row[kolom_tanggal]
 
             if grup and harga and tanggal_full:
+
                 if isinstance(tanggal_full, datetime):
                     tanggal = tanggal_full.strftime("%Y/%m/%d")
                 else:
@@ -215,9 +184,9 @@ sheet = wb.active
         tanggal_terakhir = None
 
         for (tanggal, grup), data in sorted(rekap_detail.items()):
+
             if tanggal_terakhir and tanggal != tanggal_terakhir:
-                hasil += f"[color=FFA500]>>> TOTAL {tanggal_terakhir} : Rp {rekap_tanggal[tanggal_terakhir]}[/color]\n"
-                hasil += "-----------------------------\n"
+                hasil += f"[color=FFA500]>>> TOTAL {tanggal_terakhir} : Rp {rekap_tanggal[tanggal_terakhir]}[/color]\n\n"
 
             if tanggal != tanggal_terakhir:
                 hasil += f"\n[b]Tanggal : {tanggal}[/b]\n"
@@ -234,7 +203,9 @@ sheet = wb.active
         self.hasil_text = hasil
         self.result_label.text = hasil
 
+    # ================= SHARE =================
     def share_hasil(self, instance):
+
         if not hasattr(self, "hasil_text"):
             self.show_notif("Belum ada hasil!")
             return
@@ -248,7 +219,7 @@ sheet = wb.active
         with open(path, "w", encoding="utf-8") as f:
             f.write(self.hasil_text)
 
-        self.show_notif("File berhasil dibuat di penyimpanan utama!")
+        self.show_notif("File berhasil dibuat!")
 
 
 if __name__ == "__main__":
